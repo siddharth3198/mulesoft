@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="c012bdb9-1361-4dc0-9edd-f4a85be0b0c2" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="779ef615-2dc6-45cb-b4e0-ceb2f5517d41" >
+		<db:my-sql-connection host="congo.c3w6upfzlwwe.us-west-1.rds.amazonaws.com" port="3306" user="mulesoft" password="mulesoft" database="congo" />
+	</db:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="674b9d2a-0bff-4605-a05b-15e19743e15d" file="db.properties" />
+	<flow name="munitdemoFlow" doc:id="ae31af2d-a5c3-43ad-ada7-907a25ebad46" >
+		<http:listener doc:name="Listener" doc:id="2387aa26-a93b-4221-992f-4e054908c8da" config-ref="HTTP_Listener_config" path="/submit"/>
+		<db:select doc:name="Select" doc:id="5193e720-2023-4df1-93f8-32d55f1e889a" config-ref="${DB_CONFIG}">
+			<db:sql >SELECT * FROM contacts</db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="fc9b27c1-4fc4-4039-af16-f0ce222b1059" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+payload
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="94fefd6d-3405-47f4-a99a-1fe4faed090a" message="#[payload]"/>
+	</flow>
+</mule>

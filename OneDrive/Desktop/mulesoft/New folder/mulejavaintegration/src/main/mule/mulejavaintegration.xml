@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:java="http://www.mulesoft.org/schema/mule/java" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="183708ad-3bd6-45b5-b316-d8876d7a1cae" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="mulejavaintegrationFlow" doc:id="5806d264-f934-40c4-88d0-2c55a7928e26" >
+		<http:listener doc:name="Listener" doc:id="918a9cf7-828e-447e-aabe-d609c1214ce2" config-ref="HTTP_Listener_config" path="/java"/>
+		<java:new doc:name="New" doc:id="8c06084c-2f9e-4c69-b72e-079aa7a84e4e" class="com.cg.mulesoft.MyFirst" target="empId" constructor="MyFirst()"/>
+		<java:invoke doc:name="Invoke" doc:id="5b2da339-529c-49c0-8088-06ce3f6a2c86" instance="#[vars.empId]" class="com.cg.mulesoft.MyFirst" method="getNameAndAge(java.lang.String,java.lang.String)">
+			<java:args ><![CDATA[#[{
+name:attributes.queryParams.ename,
+age:attributes.queryParams.eage
+
+}]]]></java:args>
+		</java:invoke>
+		<logger level="INFO" doc:name="Logger" doc:id="9fb32879-c125-4077-8b4c-f06cebb55f2c" message="java call done "/>
+	</flow>
+</mule>

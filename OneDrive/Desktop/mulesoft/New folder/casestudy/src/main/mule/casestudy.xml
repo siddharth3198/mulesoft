@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="64bdccf8-652b-4516-8028-250bbf8bcf71" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="f6d41367-adc6-4b95-82a9-efb3bc463687" >
+		<file:connection workingDir="C:\Users\siddh\OneDrive\Desktop\online\input" />
+	</file:config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="18c03d6e-5b81-4d0e-852c-7678cd2d4d34" >
+		<salesforce:cached-basic-connection username="siddharth@capgemini.com" password="igot14inmaths" securityToken="lFYcVeDlEFDFxO5AaXgVBC1K" />
+	</salesforce:sfdc-config>
+	<flow name="casestudyFlow" doc:id="8494891b-96ee-4efd-a06c-10dac3a9d467" >
+		<http:listener doc:name="Listener" doc:id="7cfde677-961d-4353-9f99-d81b57fd7d76" config-ref="HTTP_Listener_config" path="/add"/>
+		<file:read doc:name="Read" doc:id="fd1b742e-7364-4360-86a6-4c58e2515e6e" config-ref="File_Config" path="C:\Users\siddh\OneDrive\Desktop\online\input\Account.csv"/>
+		<ee:transform doc:name="Transform Message" doc:id="2d53ece6-19f4-4909-8c40-8c8212a7d90a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+	payload map{
+		aname:$.AccountName,
+		aphone:$.AccountPhone,
+		acity:$.AccountCity,
+		astate:$.AccountState
+	}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="casestudyBatch_Job" doc:id="077db63e-8d5f-4a6b-a68c-0d5f86e778d6" >
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="c8f83728-a510-4bca-8ab7-ffaec6ae3f82" >
+					<ee:transform doc:name="Transform Message" doc:id="2f6c65db-bd12-417c-bb33-10ccd4487019" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	Name: payload.aname,
+	BillingCity: payload.acity,
+	BillingState: payload.astate,
+	Phone: payload.aphone
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="999109b0-f5df-4cab-95ab-6070b4447602" size="2">
+						<salesforce:create doc:name="Create" doc:id="cc351e5a-833b-47d5-b90c-b3a9bce64e3d" config-ref="Salesforce_Config" type="Account"/>
+						<ee:transform doc:name="Transform Message" doc:id="4f0aafa1-9577-4a03-ba07-57d9810b8b0e">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+						<logger level="INFO" doc:name="Logger" doc:id="a60ef377-ca1a-41da-88ec-1e1aa117b26a" message="all steps completed" />
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="da78c55d-12ab-4d51-8215-a4e92936a4e3" message="completed"/>
+			</batch:on-complete>
+		</batch:job>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="40a5f70b-29ab-40e2-99c7-f8e0aa912404" type="ANY">
+				<logger level="INFO" doc:name="Logger" doc:id="01da385f-552e-484a-a01f-4e4dd3c6272e" message="#[error.description]"/>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>
